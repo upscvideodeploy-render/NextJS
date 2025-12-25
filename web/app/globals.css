@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 15, 25;
+  --background-end-rgb: 10, 10, 20;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+/* Neon Glass Effect */
+.neon-glass {
+  background: rgba(30, 30, 50, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px rgba(0, 243, 255, 0.1);
+}
+
+.neon-glass-hover:hover {
+  box-shadow: 0 0 60px rgba(0, 243, 255, 0.2);
+  border-color: rgba(0, 243, 255, 0.3);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(90deg, #00f3ff, #bc13fe, #ff00ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-neon-blue to-neon-purple rounded-lg font-semibold
+         hover:shadow-lg hover:shadow-neon-blue/30 transition-all duration-300
+         active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 border border-neon-blue/50 rounded-lg font-semibold
+         hover:bg-neon-blue/10 transition-all duration-300;
+}

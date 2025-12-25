@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 15, 25;
+  --background-end-rgb: 10, 10, 20;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom, rgb(var(--background-start-rgb)), rgb(var(--background-end-rgb)));
+  min-height: 100vh;
+}
+
+.neon-glass {
+  background: rgba(30, 30, 50, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card {
+  @apply neon-glass p-6 rounded-xl;
+}
+
+.btn-primary {
+  @apply px-4 py-2 bg-gradient-to-r from-neon-blue to-neon-purple rounded-lg font-medium text-sm;
+}
+
+.btn-danger {
+  @apply px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg font-medium text-sm text-red-400;
+}
