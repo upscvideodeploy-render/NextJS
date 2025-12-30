@@ -4,14 +4,14 @@ FROM node:20-alpine AS base
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files FROM THE APPS/WEB DIRECTORY
+COPY apps/web/package*.json ./
 
-# Install dependencies (using install instead of ci to generate lockfile if missing)
+# Install dependencies
 RUN npm install --only=production && npm cache clean --force
 
-# Copy source code
-COPY . .
+# Copy source code FROM THE APPS/WEB DIRECTORY
+COPY apps/web/ .
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED 1
