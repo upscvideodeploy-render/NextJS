@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Sphere, Line, Html } from '@react-three/drei';
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 
@@ -12,12 +12,24 @@ interface SyllabusNode {
   name: string;
   paper: string;
   topic: string;
+  parent_id: string | null;
+  depth: number;
   children?: SyllabusNode[];
+  // Progress data
+  progress?: number; // 0-100
+  confidence?: number; // 0-1
+  isBookmarked?: boolean;
 }
 
 interface Props {
   nodes: SyllabusNode[];
   onNodeClick: (node: SyllabusNode) => void;
+  onBookmark: (nodeId: string) => void;
+  onResetView?: () => void;
+}
+
+export interface SyllabusCanvasHandles {
+  resetCamera: () => void;
 }
 
 const PAPER_COLORS: Record<string, string> = {
@@ -29,12 +41,20 @@ const PAPER_COLORS: Record<string, string> = {
   Essay: '#ff006b',
 };
 
+// AC2: Confidence colors
+const getConfidenceColor = (confidence: number): string => {
+  if (confidence >= 0.7) return '#00ff00'; // green
+  if (confidence >= 0.4) return '#ffff00'; // yellow
+  return '#ff0000'; // red
+};
+
 function NodeSphere({
   node,
   position,
   color,
   isSelected,
   onClick,
+  onBookmark,
   isHovered,
   setHovered
 }: {
@@ -43,6 +63,7 @@ function NodeSphere({
   color: string;
   isSelected: boolean;
   onClick: () => void;
+  onBookmark: (nodeId: string) => void;
   isHovered: boolean;
   setHovered: (hovered: boolean) => void;
 }) {
@@ -57,6 +78,13 @@ function NodeSphere({
   });
 
   const finalHovered = hovered || isHovered;
+
+  // AC2: Get confidence color, fallback to paper color
+  const nodeColor = node.confidence !== undefined ? getConfidenceColor(node.confidence) : color;
+  // AC2: Progress ring color based on confidence
+  const progressColor = node.confidence !== undefined ? getConfidenceColor(node.confidence) : color;
+  // AC2: Progress ring thickness based on completion
+  const progressThickness = 0.05 + (node.progress || 0) / 1000; // 0.05 to 0.15 range
 
   return (
     <group position={position}>
@@ -80,18 +108,33 @@ function NodeSphere({
         }}
       >
         <meshStandardMaterial
-          color={finalHovered ? '#ffffff' : color}
-          emissive={finalHovered ? color : '#000000'}
+          color={finalHovered ? '#ffffff' : nodeColor}
+          emissive={finalHovered ? nodeColor : '#000000'}
           emissiveIntensity={finalHovered ? 0.5 : 0}
           transparent
           opacity={0.9}
         />
       </Sphere>
 
-      {/* Progress ring */}
+      {/* Progress ring - AC2: Show progress and confidence */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.35, 0.4, 32, 1, 0, Math.PI * 0.75]} />
-        <meshBasicMaterial color={color} transparent opacity={0.5} />
+        {/* Full ring for progress */}
+        <ringGeometry args={[0.35, 0.35 + progressThickness, 32, 1, 0, (Math.PI * 2 * (node.progress || 0)) / 100]} />
+        <meshBasicMaterial color={progressColor} transparent opacity={0.8} />
+        
+        {/* Confidence indicator - small segment */}
+        {node.confidence !== undefined && (
+          <>
+            <ringGeometry args={[0.35 - 0.02, 0.35 + progressThickness + 0.02, 32, 1, 0, Math.PI * 0.2]} />
+            <meshBasicMaterial color={getConfidenceColor(node.confidence)} transparent opacity={0.6} />
+          </>
+        )}
+      </mesh>
+
+      {/* Bookmark indicator - AC7 */}
+      <mesh position={[0.5, 0.5, 0]}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshBasicMaterial color={node.isBookmarked ? '#ffcc00' : '#444444'} transparent opacity={0.8} />
       </mesh>
 
       {/* Label */}
@@ -148,7 +191,8 @@ function TreeLayout({
   y = 3,
   z = 0,
   spread = 4,
-  onNodeClick
+  onNodeClick,
+  onBookmark
 }: {
   nodes: SyllabusNode[];
   level?: number;
@@ -157,6 +201,7 @@ function TreeLayout({
   z?: number;
   spread?: number;
   onNodeClick: (node: SyllabusNode) => void;
+  onBookmark: (nodeId: string) => void;
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -178,6 +223,7 @@ function TreeLayout({
         color={PAPER_COLORS[node.paper] || '#666'}
         isSelected={false}
         onClick={() => onNodeClick(node)}
+        onBookmark={onBookmark}
         isHovered={hoveredId === node.id}
         setHovered={(h) => setHoveredId(h ? node.id : null)}
       />
@@ -206,8 +252,18 @@ function TreeLayout({
   return <>{results}</>;
 }
 
-export default function SyllabusCanvas({ nodes, onNodeClick }: Props) {
+const SyllabusCanvas = forwardRef<SyllabusCanvasHandles, Props>(({ nodes, onNodeClick, onBookmark, onResetView }, ref) => {
   const router = useRouter();
+  const orbitControlsRef = useRef<any>();
+
+  // AC6: Expose reset camera function
+  useImperativeHandle(ref, () => ({
+    resetCamera: () => {
+      if (orbitControlsRef.current) {
+        orbitControlsRef.current.reset();
+      }
+    }
+  }));
 
   // Flatten nodes for display (limit to top-level for clarity)
   const topLevelNodes = nodes.filter(n => n.depth === 0);
@@ -227,6 +283,7 @@ export default function SyllabusCanvas({ nodes, onNodeClick }: Props) {
 
         {/* Controls */}
         <OrbitControls
+          ref={orbitControlsRef}
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
@@ -238,19 +295,27 @@ export default function SyllabusCanvas({ nodes, onNodeClick }: Props) {
         <TreeLayout
           nodes={topLevelNodes}
           onNodeClick={onNodeClick}
+          onBookmark={onBookmark}
         />
 
         {/* Background stars/particles */}
         <Stars />
       </Canvas>
 
-      {/* Overlay instructions */}
-      <div className="absolute bottom-4 left-4 text-sm text-gray-500">
-        <p>Drag to rotate • Scroll to zoom • Click node for details</p>
-      </div>
+        {/* AC6: Reset view button */}
+        <button 
+          className="absolute bottom-4 left-4 px-4 py-2 bg-slate-800/80 backdrop-blur-sm border border-white/20 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-slate-700/80 transition-colors z-10"
+          onClick={onResetView}
+        >
+          Reset View
+        </button>
     </div>
   );
-}
+});
+
+SyllabusCanvas.displayName = 'SyllabusCanvas';
+
+export { SyllabusCanvas };
 
 function Stars() {
   const starsRef = useRef<THREE.Points>(null);

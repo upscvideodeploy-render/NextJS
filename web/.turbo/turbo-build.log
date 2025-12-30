@@ -1,0 +1,34 @@
+
+> @upsc-prepx-ai/web@0.0.1 build E:\BMAD method\BMAD 4\apps\web
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    177 B          96.1 kB
+├ ○ /_not-found                          870 B          88.1 kB
+├ ○ /api/health                          0 B                0 B
+└ ○ /dashboard                           177 B          96.1 kB
++ First Load JS shared by all            87.2 kB
+  ├ chunks/1620266f-6916c2bcd20b65a2.js  53.6 kB
+  ├ chunks/87-bfd1e8f8658b8c9b.js        31.7 kB
+  └ other shared chunks (total)          1.86 kB
+
+
+ƒ Middleware                             70.1 kB
+
+○  (Static)  prerendered as static content
+

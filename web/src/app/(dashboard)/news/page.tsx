@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
 interface DailyNews {
@@ -24,9 +24,7 @@ const CATEGORIES = [
 ];
 
 export default function NewsPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = getSupabaseBrowserClient(
   );
 
   const [news, setNews] = useState<DailyNews[]>([]);

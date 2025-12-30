@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { VideoPlayer } from '@/components/VideoPlayer';
 
 interface Lecture {
@@ -93,9 +93,7 @@ const TOPICS = [
 ];
 
 export default function LecturesPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = getSupabaseBrowserClient(
   );
 
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');

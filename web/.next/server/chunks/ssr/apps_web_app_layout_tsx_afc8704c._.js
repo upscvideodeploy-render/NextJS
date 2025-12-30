@@ -1,0 +1,3 @@
+module.exports=[28992,a=>{"use strict";var b=a.i(88195);function c({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{className:"min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900",children:a})})}a.s(["default",()=>c,"metadata",0,{title:"UPSC PrepX-AI | AI-Powered UPSC Preparation",description:"Enterprise AI-powered UPSC exam preparation platform with video generation, adaptive learning, and comprehensive study materials."}])}];
+
+//# sourceMappingURL=apps_web_app_layout_tsx_afc8704c._.js.map

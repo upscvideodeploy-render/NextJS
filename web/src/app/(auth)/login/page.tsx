@@ -1,97 +1,71 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useLanguage } from '@/contexts/LanguageContext';
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { signIn, signInWithGoogle } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const redirect = searchParams.get('redirect') || '/dashboard'
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  });
+  })
 
-  const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
-    setError(null);
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      router.push('/dashboard');
-      router.refresh();
-    } catch (err) {
-      setError('An unexpected error occurred');
+      await signIn(data.email, data.password)
+      router.push(redirect)
+      router.refresh()
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        setError(error.message);
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+      await signInWithGoogle()
+      // OAuth will redirect automatically via callback
+    } catch (err: any) {
+      setError(err.message || 'Google sign-in failed')
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">UPSC PrepX-AI</h1>
-          <p className="text-gray-400">{t('auth.subtitle')}</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2">
+            UPSC PrepX-AI
+          </h1>
+          <p className="text-gray-400">Your AI-powered UPSC preparation platform</p>
         </div>
 
         {/* Login Card */}
-        <div className="neon-glass p-8 rounded-2xl">
+        <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl">
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
@@ -103,14 +77,15 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                {t('auth.email')}
+                Email
               </label>
               <input
                 {...register('email')}
                 type="email"
                 id="email"
-                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg focus:outline-none focus:border-neon-blue text-white"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-gray-500"
                 placeholder="you@example.com"
+                disabled={isLoading}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
@@ -120,14 +95,15 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                {t('auth.password')}
+                Password
               </label>
               <input
                 {...register('password')}
                 type="password"
                 id="password"
-                className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg focus:outline-none focus:border-neon-blue text-white"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-gray-500"
                 placeholder="••••••••"
+                disabled={isLoading}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
@@ -136,8 +112,8 @@ export default function LoginPage() {
 
             {/* Forgot Password Link */}
             <div className="text-right">
-              <Link href="/forgot-password" className="text-sm text-neon-blue hover:underline">
-                {t('auth.forgotPassword')}
+              <Link href="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                Forgot password?
               </Link>
             </div>
 
@@ -145,9 +121,9 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? t('action.loading') : t('auth.signIn')}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
@@ -157,7 +133,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-900/0 text-gray-400">Or continue with</span>
+              <span className="px-4 bg-transparent text-gray-400">Or continue with</span>
             </div>
           </div>
 
@@ -165,7 +141,8 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-white/10 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
+            type="button"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-white/10 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -185,18 +162,18 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-gray-300">{t('auth.continueGoogle')}</span>
+            <span className="text-gray-300">Continue with Google</span>
           </button>
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-400">
-            {t('auth.dontHaveAccount') || "Don't have an account?"}{' '}
-            <Link href="/signup" className="text-neon-blue hover:underline">
-              {t('auth.signUp')}
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
+              Sign up
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

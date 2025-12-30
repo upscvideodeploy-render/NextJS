@@ -1,0 +1,65 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { topic_id } = await req.json();
+
+  const { data: topic } = await (supabase as any)
+    .from('topic_progress')
+    .select('*')
+    .eq('id', topic_id)
+    .single();
+
+  if (!topic) {
+    return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
+  }
+
+  const questions = await generateQuestions(topic);
+
+  const { data: quiz } = await (supabase as any)
+    .from('revision_quizzes')
+    .insert({
+      user_id: user.id,
+      topic_id: topic.id,
+      questions_json: questions
+    })
+    .select()
+    .single();
+
+  return NextResponse.json({ quiz });
+}
+
+async function generateQuestions(topic: any) {
+  const prompt = `Generate 10 UPSC-style MCQs for "${topic.topic}" in ${topic.subject}.
+Format as JSON array: [{"question": "...", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "...", "difficulty": "easy|medium|hard"}]
+Mix: 3 easy, 5 medium, 2 hard.`;
+
+  const response = await fetch('https://api.a4f.co/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ddc-a4f-12e06ff0184f41de8d3de7be4cd2e831`
+    },
+    body: JSON.stringify({
+      model: 'provider-3/llama-4-scout',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 2000
+    })
+  });
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  
+  try {
+    return JSON.parse(content);
+  } catch {
+    return [];
+  }
+}

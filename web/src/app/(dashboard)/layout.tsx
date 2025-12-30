@@ -44,7 +44,7 @@ const iconPaths: Record<string, string> = {
 // Helper component for localized navigation labels
 function NavLabel({ labelKey }: { labelKey: string }) {
   const { t } = useLanguage();
-  return <span>{t(labelKey)}</span>;
+  return <span>{t(labelKey as any)}</span>;
 }
 
 // Trial banner component
@@ -53,7 +53,7 @@ function TrialBanner() {
   return (
     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-neon-blue/10 border border-neon-blue/20 rounded-full">
       <span className="w-2 h-2 bg-neon-blue rounded-full animate-pulse"></span>
-      <span className="text-xs text-neon-blue">{t('trial.freeTrial')} - {t('trial.active')}</span>
+      <span className="text-xs text-neon-blue">{t('trial.freeTrial' as any)} - {t('trial.active' as any)}</span>
     </div>
   );
 }
@@ -122,7 +122,7 @@ function DashboardLayoutContent({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            {sidebarOpen && <span>{t('nav.signOut')}</span>}
+            {sidebarOpen && <span>{t('nav.signOut' as any)}</span>}
           </button>
         </div>
       </aside>

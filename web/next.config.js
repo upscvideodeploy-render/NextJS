@@ -1,16 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  output: 'standalone',
   images: {
-    domains: ['localhost'],
-  },
-  experimental: {
-    turbo: {
-      rules: {
-        '*.ts': ['typescript'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '89.117.60.144',
       },
-    },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

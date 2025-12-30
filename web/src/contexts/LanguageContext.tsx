@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { createBrowserClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export type Language = 'en' | 'hi';
 
@@ -300,15 +300,13 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
 
     // Also sync to Supabase if user is logged in
     try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      const supabase = getSupabaseBrowserClient(
       );
 
       // Get current user (async, don't wait)
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
-          supabase.from('user_profiles').upsert({
+          (supabase.from('user_profiles') as any).upsert({
             user_id: user.id,
             preferred_language: lang,
             updated_at: new Date().toISOString(),
